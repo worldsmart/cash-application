@@ -33,7 +33,7 @@ OWNER to ${db.user};`, (err) => {
             if(err) console.log('Error in creation fake products');
             else {
                 pool.query(`CREATE TABLE IF NOT EXISTS public.orders
-                (code integer,state character varying,created date,invoice date,customer character varying)
+                (id serial NOT NULL,code integer,state character varying,created date,invoice date,customer character varying,PRIMARY KEY (id))
                 WITH (OIDS = FALSE)
                 TABLESPACE pg_default;
                 ALTER TABLE public.orders
@@ -61,7 +61,7 @@ OWNER to ${db.user};`, (err) => {
                                 else{
                                     pool.query(`CREATE TABLE IF NOT EXISTS public.dicounts (code integer, coefficients double precision)
                                         WITH (OIDS = FALSE) TABLESPACE pg_default;
-                                        ALTER TABLE public.dicounts OWNER to postgres;`, (err)=>{
+                                        ALTER TABLE public.dicounts OWNER to ${db.user};`, (err)=>{
                                         if(err) console.log('Discounts DB creation error');
                                         else {
                                             pool.query(`INSERT INTO public.dicounts( code, coefficients ) VALUES 
