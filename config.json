@@ -1,0 +1,9 @@
+{
+  "db": {
+    "user": "postgres",
+    "host": "localhost",
+    "database": "cash-app",
+    "password": "rpg10",
+    "port": 5432
+  }
+}
