@@ -1,0 +1,19 @@
+{
+  "name": "cash-app",
+  "version": "1.0.0",
+  "description": "\"# cash-application\"",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/worldsmart/cash-application.git"
+  },
+  "author": "Roman Ushakov",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/worldsmart/cash-application/issues"
+  },
+  "homepage": "https://github.com/worldsmart/cash-application#readme"
+}
