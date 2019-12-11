@@ -25,3 +25,36 @@ module.exports.newOrder = (code, customer)=>{
         });
     });
 };
+
+module.exports.confirmOrder = (id)=>{
+    return new Promise(resolve => {
+        pool.query(`SELECT state FROM public.orders WHERE id = ${id}`, (err, res)=>{
+            if(err) resolve({err:err, alert:'Orders database error'});
+            else if(!res.rows[0]) resolve({alert:'There isn`t order with such id',err:{
+                    "name": "error",
+                    "severity": "ERROR",
+                    "code": "422",
+                    "text": "Can`t find order with such id in orders database"
+                }});
+            else if(res.rows[0].state != 'created') resolve({alert:'Order already was recipted',err:{
+                    "name": "error",
+                    "severity": "ERROR",
+                    "code": "403",
+                    "text": "No permissions to change this order"
+                }});
+            else pool.query(`UPDATE public.orders SET state = 'confirmed' WHERE id = ${id}`, (err)=>{
+                    if(err) resolve({err:err, alert:'Database updating error'});
+                    else resolve({rows:id, alert:'Order successfully updated, invoice ready to generate'});
+                });
+        });
+    });
+};
+
+module.exports.forRecipt = ()=>{
+    return new Promise(resolve => {
+        pool.query(`SELECT * FROM public.orders WHERE state = 'created' ORDER BY created`, (err, res)=>{
+            if(err) resolve({err:err, alert:'Can`t select. Database error'});
+            else resolve({rows:res.rows, alert:'All orders to recipt are selected'});
+        });
+    });
+};
