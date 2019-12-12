@@ -9,7 +9,7 @@ pool.on('error', (err, client) => {
 })
 
 pool.query(`CREATE TABLE IF NOT EXISTS public.products
-(code integer,name character varying COLLATE pg_catalog."default",price double precision,date date)
+(code integer,name character varying COLLATE pg_catalog."default",price double precision,date date,PRIMARY KEY (code))
 WITH (OIDS = FALSE)
 TABLESPACE pg_default;
 ALTER TABLE public.products
@@ -33,7 +33,7 @@ OWNER to ${db.user};`, (err) => {
             if(err) console.log('Error in creation fake products');
             else {
                 pool.query(`CREATE TABLE IF NOT EXISTS public.orders
-                (id serial NOT NULL,code integer,state character varying,created date,invoice date,customer character varying,PRIMARY KEY (id))
+                (id serial NOT NULL,code integer REFERENCES public.products (code),state character varying,created date,invoice date,customer character varying,PRIMARY KEY (id))
                 WITH (OIDS = FALSE)
                 TABLESPACE pg_default;
                 ALTER TABLE public.orders
@@ -50,6 +50,8 @@ OWNER to ${db.user};`, (err) => {
                         if(err) console.log('Error in creation fake orders');
                         else{
                             pool.query(`INSERT INTO public.orders(code, state, created, invoice, customer)VALUES 
+                                ('144123', 'confirmed', '10.13.2019', NULL,'Grigoriy Denisenko'),
+                                ('329572', 'confirmed', '11.16.2019', NULL,'Maksim Labudnoy'),
                                 ('234234', 'confirmed', '10.20.2019',  '11.20.2019','Mihail Robahov'),
                                 ('144123', 'confirmed', '10.15.2019', '11.20.2019','Vladimir Rutskin'),
                                 ('329572', 'confirmed', '11.18.2019', '11.20.2019','Artem Safonov'),
@@ -59,12 +61,12 @@ OWNER to ${db.user};`, (err) => {
                                 ('823755', 'paid', '12.3.2019', '11.20.2019','Vadim Motkov');`, (err)=>{
                                 if(err) console.log('Error in creation fake orders');
                                 else{
-                                    pool.query(`CREATE TABLE IF NOT EXISTS public.dicounts (code integer, coefficients double precision)
+                                    pool.query(`CREATE TABLE IF NOT EXISTS public.discounts (code integer, coefficients double precision)
                                         WITH (OIDS = FALSE) TABLESPACE pg_default;
-                                        ALTER TABLE public.dicounts OWNER to ${db.user};`, (err)=>{
+                                        ALTER TABLE public.discounts OWNER to ${db.user};`, (err)=>{
                                         if(err) console.log('Discounts DB creation error');
                                         else {
-                                            pool.query(`INSERT INTO public.dicounts( code, coefficients ) VALUES 
+                                            pool.query(`INSERT INTO public.discounts( code, coefficients ) VALUES 
                                                 ('234234', '0.3'),
                                                 ('239615', '0.1'),
                                                 ('983265', '0.23'),

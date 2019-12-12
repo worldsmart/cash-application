@@ -47,6 +47,47 @@ router.post('/confirm_order', (req, res)=>{
         }});
 });
 
+router.post('/generate_invoice', (req, res)=>{
+    if(req.headers.authorization && req.body.id && validation({role:req.headers.authorization, id:req.body.id})){
+        if(req.headers.authorization == 'cashier'){
+            db.invoice(req.body.id).then((data)=>{
+                if(data.err) res.json({alert:data.alert,err:data.err});
+                else {
+                    if(new Date() - data.rows[0].product_created_date > 2592000000){
+                        data.rows[0].coefficients += 0.2
+                    }
+                    data.rows[0].full_price = data.rows[0].price;
+                    data.rows[0].discount = data.rows[0].coefficients * 100 + '%';
+                    data.rows[0].price *= 1 - data.rows[0].coefficients;
+                    data.rows[0].product_created_date = undefined;
+                    data.rows[0].coefficients = undefined;
+                    res.json({alert:data.alert, invoice:data.rows[0]});
+                }
+            });
+        }
+        else res.json({alert:'Only cashiers can generate invoice',err:{
+                "name": "error",
+                "severity": "ERROR",
+                "code": "422",
+                "text": "Bad role for this operation"
+            }});
+    }
+    else res.json({alert:'Request was rejected due to poor input',err:{
+            "name": "error",
+            "severity": "ERROR",
+            "code": "422",
+            "text": "Required fields: role(authorization header(string)), id(number)"
+        }});
+});
+
+router.post('/confirm_payment', (req, res)=>{
+
+});
+
+router.post('/get_orders', (req, res)=>{
+
+});
+
 router.get('/orders_for_receipt', (req, res)=>{
     if(req.headers.authorization && validation({role:req.headers.authorization})){
         if(req.headers.authorization == 'bearer'){
