@@ -8,6 +8,21 @@ pool.query('SELECT NOW()', (err) => {
     else console.log('Connected to database: ' + db.database);
 });
 
+module.exports.confirmPayment = (id)=>{
+    return new Promise(resolve => {
+        pool.query(`UPDATE public.orders SET state = 'paid' WHERE id = ${id} AND state = 'confirmed' AND invoice IS NOT NULL RETURNING state`, (err, res)=>{
+            if(err) resolve({err:err, alert:'Orders database error'});
+            else if(!res.rows[0]) resolve({alert:'Bad status of order to confirm payment',err:{
+                    "name": "error",
+                    "severity": "ERROR",
+                    "code": "422",
+                    "text": "To confirm payment order need to be confirmed and invoice be generated"
+                }});
+            else resolve({alert:'Order successfully paid'});
+        });
+    });
+};
+
 module.exports.invoice = (id)=>{
     return new Promise(resolve => {
         pool.query(`UPDATE public.orders SET invoice = COALESCE(invoice, now()) WHERE id = ${id} AND state = 'confirmed' RETURNING state`, (err, res)=>{
@@ -16,7 +31,7 @@ module.exports.invoice = (id)=>{
                     "name": "error",
                     "severity": "ERROR",
                     "code": "422",
-                    "text": "To ganerate invoice state need to be confirmed"
+                    "text": "To generate invoice state need to be confirmed"
                 }});
             else pool.query(`SELECT orders.id, orders.code, products.name AS product, products.price, orders.created, orders.invoice, orders.customer, products.date AS product_created_date, discounts.coefficients FROM public.orders JOIN public.products ON products.code = orders.code LEFT JOIN public.discounts ON discounts.code = orders.code WHERE id = ${id};`,(err, res)=>{
                 if(err) resolve({err:err, alert:'Orders database error'});

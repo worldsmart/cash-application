@@ -81,7 +81,26 @@ router.post('/generate_invoice', (req, res)=>{
 });
 
 router.post('/confirm_payment', (req, res)=>{
-
+    if(req.headers.authorization && req.body.id && validation({role:req.headers.authorization, id:req.body.id})){
+        if(req.headers.authorization == 'cashier'){
+            db.confirmPayment(req.body.id).then((data)=>{
+                if(data.err) res.json({alert:data.alert,err:data.err});
+                else res.json({alert:data.alert});
+            });
+        }
+        else res.json({alert:'Only cashiers can confirm payment',err:{
+                "name": "error",
+                "severity": "ERROR",
+                "code": "422",
+                "text": "Bad role for this operation"
+            }});
+    }
+    else res.json({alert:'Request was rejected due to poor input',err:{
+            "name": "error",
+            "severity": "ERROR",
+            "code": "422",
+            "text": "Required fields: role(authorization header(string)), id(number)"
+        }});
 });
 
 router.post('/get_orders', (req, res)=>{
