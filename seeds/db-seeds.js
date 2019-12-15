@@ -1,21 +1,24 @@
-const { Pool } = require('pg');
-const { db } = require('../config');
+const { Pool } = require('pg');//Подгружаю постгрес модуль
+const { db } = require('../config');//Подгружаю конфиг(для подключения к дб далее)
 
-const pool = new Pool(db);
+const pool = new Pool(db);//Подключение к дб
 
+//Проверка подключения
 pool.on('error', (err, client) => {
     console.log('Can`t connect to DB');
     pool.end();
-})
+});
 
+//Начинаю с создания таблици продуктов
 pool.query(`CREATE TABLE IF NOT EXISTS public.products
 (code integer,name character varying COLLATE pg_catalog."default",price double precision,date date,PRIMARY KEY (code))
 WITH (OIDS = FALSE)
 TABLESPACE pg_default;
 ALTER TABLE public.products
 OWNER to ${db.user};`, (err) => {
-    if(err) console.log('Products DB creation error');
+    if(err) console.log('Products DB creation error'); //Оповещение о возникшей ошибки, далее не помечается
     else {
+        //Создаю продукты
         pool.query(`INSERT INTO public.products (code, name, price, date) VALUES 
         ('234234', 'Stove', '1805.5', '11.2.2019'),
         ('234141', 'Oven', '980', '12.9.2019'),
@@ -32,6 +35,7 @@ OWNER to ${db.user};`, (err) => {
         ('437471', 'Cup', '15', '11.23.2019');`, (err)=>{
             if(err) console.log('Error in creation fake products');
             else {
+                //Создаю дб заказов
                 pool.query(`CREATE TABLE IF NOT EXISTS public.orders
                 (id serial NOT NULL,code integer REFERENCES public.products (code),state character varying,created date,invoice date,customer character varying,PRIMARY KEY (id))
                 WITH (OIDS = FALSE)
@@ -39,7 +43,8 @@ OWNER to ${db.user};`, (err) => {
                 ALTER TABLE public.orders
                 OWNER to ${db.user};`,(err)=>{
                     if(err) console.log('Orders DB creation error');
-                    pool.query(`INSERT INTO public.orders(code, state, created, customer)VALUES 
+                    //Создаю заказы
+                    else pool.query(`INSERT INTO public.orders(code, state, created, customer)VALUES 
                                 ('234234', 'created', '11.20.2019', 'Denis Kuznetsov'),
                                 ('234141', 'created', '11.15.2019', 'Valentin Petrov'),
                                 ('214414', 'created', '11.18.2019', 'Maksim Popov'),
@@ -61,11 +66,13 @@ OWNER to ${db.user};`, (err) => {
                                 ('823755', 'paid', '12.3.2019', '11.20.2019','Vadim Motkov');`, (err)=>{
                                 if(err) console.log('Error in creation fake orders');
                                 else{
+                                    //Создаю бд для скидок
                                     pool.query(`CREATE TABLE IF NOT EXISTS public.discounts (code integer, coefficients double precision)
                                         WITH (OIDS = FALSE) TABLESPACE pg_default;
                                         ALTER TABLE public.discounts OWNER to ${db.user};`, (err)=>{
                                         if(err) console.log('Discounts DB creation error');
                                         else {
+                                            //И на последок создаю скидки
                                             pool.query(`INSERT INTO public.discounts( code, coefficients ) VALUES 
                                                 ('234234', '0.3'),
                                                 ('239615', '0.1'),

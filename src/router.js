@@ -1,7 +1,15 @@
-const router = require('express').Router();
-const db = require('./db');
+const router = require('express').Router();//Подгружаю модуль роутера из (express)
+const db = require('./db');//Подгружаю модуль базы данных
 
+//Обрабатываю путь на добавление заказа
 router.post('/add_order', (req, res)=>{
+    //Все запросы организованы одинаковым образом, далее я не буду описывать повторно,
+    //изначально происходит проверка на наличее необходимых полей для работы конкретного
+    //пути при помощи условия на наличие полей и функции валидации, затем идёт проверка на роль
+    //пользователя, проверка на роль в далнейшем могла бы быть вынесена в отдельную функцию и
+    //принемать поле в защифрованом виде и затем розкодировать его и.т.д,
+    //после идет использование функции из модуля базы данных и при необходимости с возвращаемыми
+    //значениями происходят какие-то действия и затем генерируется ответ на запрос
     if(req.headers.authorization && req.body.product && req.body.customer && validation({role:req.headers.authorization, product:req.body.product, customer:req.body.customer})){
         if(req.headers.authorization == 'cashier'){
             db.newOrder(req.body.product, req.body.customer).then((data)=>{
@@ -24,6 +32,7 @@ router.post('/add_order', (req, res)=>{
         }});
 });
 
+//Обрабатываю путь на подтвержение выдачи товара
 router.post('/confirm_order', (req, res)=>{
     if(req.headers.authorization && req.body.id && validation({role:req.headers.authorization, id:req.body.id})){
         if(req.headers.authorization == 'bearer'){
@@ -47,10 +56,12 @@ router.post('/confirm_order', (req, res)=>{
         }});
 });
 
+//Обрабатываю путь на генерацию счета по товару
 router.post('/generate_invoice', (req, res)=>{
     if(req.headers.authorization && req.body.id && validation({role:req.headers.authorization, id:req.body.id})){
         if(req.headers.authorization == 'cashier'){
             db.invoice(req.body.id).then((data)=>{
+                //Немного изменяю поля и добавляю новые для удобства и наглядности
                 if(data.err) res.json({alert:data.alert,err:data.err});
                 else {
                     if(new Date() - data.rows[0].product_created_date > 2592000000){
@@ -80,6 +91,7 @@ router.post('/generate_invoice', (req, res)=>{
         }});
 });
 
+//Обрабатываю путь на подтверждение оплаты товара
 router.post('/confirm_payment', (req, res)=>{
     if(req.headers.authorization && req.body.id && validation({role:req.headers.authorization, id:req.body.id})){
         if(req.headers.authorization == 'cashier'){
@@ -103,6 +115,7 @@ router.post('/confirm_payment', (req, res)=>{
         }});
 });
 
+//Обрабатываю путь на получение списка заказов для менеджера
 router.post('/get_orders', (req, res)=>{
     if(req.headers.authorization && validation({role:req.headers.authorization, from: req.body.from, to: req.body.to})){
         if(req.headers.authorization == 'accountant'){
@@ -137,6 +150,7 @@ router.post('/get_orders', (req, res)=>{
         }});
 });
 
+//Обрабатываю путь на получение заказов ожидающих выдачи
 router.get('/orders_for_receipt', (req, res)=>{
     if(req.headers.authorization && validation({role:req.headers.authorization})){
         if(req.headers.authorization == 'bearer'){
@@ -160,6 +174,7 @@ router.get('/orders_for_receipt', (req, res)=>{
         }});
 });
 
+//Функция для валидации входных данных
 function validation(fields){
     if(fields.role != undefined){
         if(fields.role != 'bearer' && fields.role != 'cashier' && fields.role != 'accountant') return false;
@@ -182,4 +197,4 @@ function validation(fields){
     return true;
 }
 
-module.exports = router;
+module.exports = router;//Экспорт роутера
