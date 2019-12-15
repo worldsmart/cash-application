@@ -104,7 +104,37 @@ router.post('/confirm_payment', (req, res)=>{
 });
 
 router.post('/get_orders', (req, res)=>{
+    if(req.headers.authorization && validation({role:req.headers.authorization, from: req.body.from, to: req.body.to})){
+        if(req.headers.authorization == 'accountant'){
+            db.getOrders(req.body.from, req.body.to).then((data)=>{
+                if(data.err) res.json({alert:data.alert,err:data.err});
+                else {
+                    for(let i = 0;i < data.rows.length;i++){
 
+                        if(new Date() - data.rows[0].product_created_date > 2592000000){
+                            data.rows[i].coefficients += 0.2
+                        }
+                        data.rows[i].discount = data.rows[i].coefficients * 100 + '%';
+                        data.rows[i].price = data.rows[i].full_price * (1 - data.rows[i].coefficients);
+                        data.rows[i].coefficients = undefined;
+                    }
+                    res.json({alert:data.alert, orders:data.rows});
+                }
+            });
+        }
+        else res.json({alert:'Only accountant can select orders',err:{
+                "name": "error",
+                "severity": "ERROR",
+                "code": "422",
+                "text": "Bad role for this operation"
+            }});
+    }
+    else res.json({alert:'Request was rejected due to poor input',err:{
+            "name": "error",
+            "severity": "ERROR",
+            "code": "422",
+            "text": "Required fields: role(authorization header(string)), |from(date[YYYY,MM,DD])|, |to(date[YYYY,MM,DD])|"
+        }});
 });
 
 router.get('/orders_for_receipt', (req, res)=>{
@@ -143,11 +173,11 @@ function validation(fields){
     if(fields.customer != undefined){
         if(!fields.customer) return false;
     }
-    if(fields.created != undefined){
-        if(!fields.created || !new Date(fields.created).getFullYear()) return false;
-        if(fields.invoice != undefined){
-            if(!fields.invoice || !new Date(fields.invoice).getFullYear()) return false;
-        }
+    if(fields.from != undefined){
+        if(!fields.from || !new Date(fields.from).getFullYear()) return false;
+    }
+    if(fields.to != undefined){
+        if(!fields.to || !new Date(fields.to).getFullYear()) return false;
     }
     return true;
 }

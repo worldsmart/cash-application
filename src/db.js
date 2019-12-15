@@ -8,6 +8,27 @@ pool.query('SELECT NOW()', (err) => {
     else console.log('Connected to database: ' + db.database);
 });
 
+module.exports.getOrders= (from = 0, to = 0)=>{
+    return new Promise(resolve => {
+        if(!from && !to) pool.query(`SELECT orders.id, orders.code, orders.state, orders.created, orders.invoice, orders.customer, products.name AS product, products.price AS full_price, products.date AS product_creation_date, discounts.coefficients FROM public.orders JOIN public.products ON products.code = orders.code LEFT JOIN public.discounts ON discounts.code = orders.code ORDER BY orders.created ASC`, (err, res)=>{
+            if(err) resolve({err:err, alert:'Orders database error'});
+            else resolve({rows:res.rows, alert:'All orders of all time'});
+        });
+        if(from && to) pool.query(`SELECT orders.id, orders.code, orders.state, orders.created, orders.invoice, orders.customer, products.name AS product, products.price AS full_price, products.date AS product_creation_date, discounts.coefficients FROM public.orders JOIN public.products ON products.code = orders.code LEFT JOIN public.discounts ON discounts.code = orders.code WHERE orders.created BETWEEN $1 AND $2 ORDER BY orders.created ASC`, [from, to], (err, res)=>{
+            if(err) resolve({err:err, alert:'Orders database error'});
+            else resolve({rows:res.rows, alert:'Orders from ' + from + ' to ' + to});
+        });
+        if(from && !to) pool.query(`SELECT orders.id, orders.code, orders.state, orders.created, orders.invoice, orders.customer, products.name AS product, products.price AS full_price, products.date AS product_creation_date, discounts.coefficients FROM public.orders JOIN public.products ON products.code = orders.code LEFT JOIN public.discounts ON discounts.code = orders.code WHERE orders.created > $1 ORDER BY orders.created ASC`, [from], (err, res)=>{
+            if(err) resolve({err:err, alert:'Orders database error'});
+            else resolve({rows:res.rows, alert:'All orders from ' + from});
+        });
+        if(!from && to) pool.query(`SELECT orders.id, orders.code, orders.state, orders.created, orders.invoice, orders.customer, products.name AS product, products.price AS full_price, products.date AS product_creation_date, discounts.coefficients FROM public.orders JOIN public.products ON products.code = orders.code LEFT JOIN public.discounts ON discounts.code = orders.code WHERE orders.created < $1 ORDER BY orders.created ASC`, [to], (err, res)=>{
+            if(err) resolve({err:err, alert:'Orders database error'});
+            else resolve({rows:res.rows, alert:'All orders to ' + to});
+        });
+    });
+};
+
 module.exports.confirmPayment = (id)=>{
     return new Promise(resolve => {
         pool.query(`UPDATE public.orders SET state = 'paid' WHERE id = ${id} AND state = 'confirmed' AND invoice IS NOT NULL RETURNING state`, (err, res)=>{
